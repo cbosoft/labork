@@ -1,0 +1,19 @@
+[package]
+name = "labork"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = "0.7.5"
+chrono = "0.4.38"
+colored = "2.1.0"
+fern = { version = "0.6.2", features = ["colored"] }
+log = "0.4.22"
+serde = { version = "1.0.208", features = ["derive"] }
+serde_yaml = "0.9.34"
+shakemyleg = "2.5.0"
+sled = "0.34.7"
+thiserror = "1.0.63"
+tokio = { version = "1.39.3", features = ["rt-multi-thread"] }
