@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use sled::{Db, Tree};
+use sled::Db;
 
 use crate::error::{OrkError, OrkResult};
 use crate::actor::Actor;
@@ -44,24 +44,25 @@ impl Ork {
         Ok(self)
     }
 
-    pub fn create_actor(&mut self, name: String, sml_source: String) -> OrkResult<Tree> {
+    pub fn create_actor(&mut self, name: String, sml_source: String) -> OrkResult<()> {
         let actors = self.db.open_tree("actors")?; // keys are names, values are SML source
+        if actors.contains_key(&name)? {
+            return Err(OrkError::ActorAlreadyExists(name));
+        }
         let _ = actors.insert(name.as_bytes(), sml_source.as_bytes())?;
         self.start_actor(name, sml_source)
     }
 
-    fn start_actor(&mut self, name: String, sml_source: String) -> OrkResult<Tree> {
+    fn start_actor(&mut self, name: String, sml_source: String) -> OrkResult<()> {
         if self.active_actor_names.contains(&name) {
             return Err(OrkError::ActorAlreadyExists(name));
         }
 
         let sm = shakemyleg::compile(&sml_source)?;
-        let task_tree_name = format!("{name}_tasks");
-        let task_tree = self.db.open_tree(&task_tree_name)?;
-        let actor = Actor::new(name.clone(), sm, task_tree.clone());
-        tokio::task::spawn(actor.run());
+        let actor = Actor::new(name.clone(), sm, &self.db);
+        tokio::task::spawn(actor?.run());
         self.active_actor_names.insert(name);
-        Ok(task_tree)
+        Ok(())
     }
 
     pub async fn run(self) {
