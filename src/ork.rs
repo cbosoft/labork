@@ -6,6 +6,7 @@ use crate::actor::Actor;
 const ORK_DB_NAME: &'static str = "./ork_state.db-sled";
 
 
+#[derive(Clone)]
 pub struct Ork {
     db: Db,
 }
