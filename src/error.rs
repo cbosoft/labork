@@ -8,7 +8,7 @@ pub enum OrkError {
     #[error("String conversion from UTF8 error")]
     Utf8Error(#[from] std::string::FromUtf8Error),
 
-    #[error("Soemthing went wrong running a state machine.")]
+    #[error("Something went wrong running a state machine.")]
     StateMachineError(#[from] shakemyleg::SML_Error),
 }
 
