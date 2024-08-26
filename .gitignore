@@ -1,2 +1,3 @@
 /target
 *.db-sled
+config.yaml
