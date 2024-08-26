@@ -19,6 +19,10 @@ pub enum OrkError {
 
     #[error("Failed to (de)serialize something")]
     DeserError(#[from] serde_yaml::Error),
+
+    #[error("Cannot create actor: '{0}' already exists")]
+    ActorAlreadyExists(String),
+
 }
 
 pub type OrkResult<T> = Result<T, OrkError>;
