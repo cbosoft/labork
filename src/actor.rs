@@ -1,9 +1,17 @@
+use std::time::Duration;
+
+use serde::Deserialize;
 use shakemyleg::StateMachine;
 use sled::{Db, Tree};
 
 use crate::error::OrkResult;
 use crate::action::{Action, ActionExt};
 
+
+#[derive(Deserialize)]
+struct ActionList {
+    pub action: String,
+}
 
 pub struct Actor {
     name: String,
@@ -33,9 +41,10 @@ impl Actor {
 
     pub async fn run(mut self) {
         loop {
-            match self.state_machine.run::<(), Vec<String>>(()) {
+            match self.state_machine.run::<(), ActionList>(()) {
                 Ok(Some(action_list)) => {
-                    for action_name in action_list {
+                    // TODO: list literals in SML
+                    for action_name in vec![action_list.action] {
                         // set status
                         self.status.insert(&self.name, action_name.as_bytes()).unwrap();
 
@@ -45,8 +54,13 @@ impl Actor {
                                 bincode::deserialize(&action_bytes).unwrap()
                             },
                             None => {
-                                // error: unknown action requested!
-                                panic!("Unknown action {}", action_name);
+                                if action_name == "NoOp" {
+                                    Action::NoOp
+                                }
+                                else {
+                                    // error: unknown action requested!
+                                    panic!("Unknown action {}", action_name);
+                                }
                             }
                         };
 
@@ -54,12 +68,16 @@ impl Actor {
                     }
                 },
                 Ok(None) => {
-                    // Nothing to do.
+                    // Nothing to do (machine is complete)
+                    log::info!("Actor {} is finished.", self.name);
+                    break;
                 },
                 Err(e) => {
-                    //
+                    log::warn!("Failed to run state machine for {0}: {e:?}", self.name);
                 }
             }
+
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
 }

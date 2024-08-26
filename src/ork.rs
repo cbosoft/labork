@@ -1,7 +1,10 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::fs::{read_to_string, File};
+use std::path::PathBuf;
 
 use sled::Db;
 
+use crate::action::Action;
 use crate::error::{OrkError, OrkResult};
 use crate::actor::Actor;
 
@@ -38,7 +41,35 @@ impl Ork {
             log::info!("Recovered state from store ({n} actors).");
         }
         else {
+            let actions_store = self.db.open_tree("actions")?;
+            // read action definitions from YAML
+            let actors_path = PathBuf::new().join("actions");
+            if actors_path.exists() {
+                let contents = std::fs::read_dir(actors_path)?;
+                for child in contents {
+                    let child = child?;
+                    let src = read_to_string(child.path())?;
+                    let actions: HashMap<String, Action> = serde_yaml::from_str(&src)?;
+
+                    for (name, action) in &actions {
+                        let action_bytes = bincode::serialize(action)?;
+                        let _ = actions_store.insert(name, action_bytes)?;
+                        log::info!("Registered action '{name}'")
+                    }
+                }
+            }
+
             // read actors from SML
+            let actors_path = PathBuf::new().join("actors");
+            if actors_path.exists() {
+                let contents = std::fs::read_dir(actors_path)?;
+                for child in contents {
+                    let child = child?;
+                    let name = child.path().with_extension("").file_name().unwrap().to_str().unwrap().to_string();
+                    let sml_source = read_to_string(child.path())?;
+                    self.create_actor(name, sml_source)?;
+                }
+            }
         }
 
         Ok(self)
@@ -50,6 +81,7 @@ impl Ork {
             return Err(OrkError::ActorAlreadyExists(name));
         }
         let _ = actors.insert(name.as_bytes(), sml_source.as_bytes())?;
+        log::info!("Created actor '{name}'");
         self.start_actor(name, sml_source)
     }
 

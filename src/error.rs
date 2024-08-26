@@ -17,8 +17,11 @@ pub enum OrkError {
     #[error("Config file path doesn't point to a file!")]
     ConfigNotAFile,
 
-    #[error("Failed to (de)serialize something")]
-    DeserError(#[from] serde_yaml::Error),
+    #[error("Failed to (de)serialize something (YAML)")]
+    YAMLDeserError(#[from] serde_yaml::Error),
+
+    #[error("Failed to (de)serialize something (Binary)")]
+    BinaryDeserError(#[from] bincode::Error),
 
     #[error("Cannot create actor: '{0}' already exists")]
     ActorAlreadyExists(String),

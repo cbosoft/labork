@@ -1,4 +1,6 @@
 /target
 *.db-sled
+actors
+actions
 config.yaml
 *.log
