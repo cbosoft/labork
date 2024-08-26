@@ -21,11 +21,16 @@ impl Ork {
     fn initialised(self) -> OrkResult<Self> {
         // re-create actors
         let actors = self.db.open_tree("actors")?; // keys are names, values are SML source
+        let n = actors.len();
         for item in actors.iter() {
             let (k, v) = item?;
             let name = String::from_utf8(k.to_vec())?;
             let sml_source = String::from_utf8(v.to_vec())?;
             let _ = self.start_actor(name, sml_source)?;
+        }
+
+        if self.db.was_recovered() {
+            log::info!("Recovered state from store ({n} actors).");
         }
 
         Ok(self)
