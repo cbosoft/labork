@@ -57,6 +57,7 @@ impl Ork {
         log::info!("LabOrk running");
         loop {
             // TODO
+            tokio::task::yield_now().await;
         }
     }
 }
